@@ -3,14 +3,18 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>RentEasy — Premium Room & Flat Booking</title>
+<title>DeraFind — Premium Room & Flat Booking</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- ✅ GSAP (optional, fallback included) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<!-- ✅ Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<!-- ✅ Ultra-fast image compression (client-side) -->
+<script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
 
 <style>
 /* ============ BASE ============ */
@@ -29,6 +33,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);min-hei
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit}
+
+/* ============ SAFETY: sab visible by default ============ */
+.hero h1, .hero p, .eyebrow, .option-card { opacity: 1; }
 
 /* ============ ANIMATED BG ============ */
 .bg-layer{position:fixed;inset:0;z-index:-2;overflow:hidden;
@@ -139,6 +146,7 @@ input.inp:focus,select.inp:focus,textarea.inp:focus{
   border-color:var(--accent);background:rgba(16,185,129,.05);
   box-shadow:0 0 0 3px rgba(16,185,129,.12)}
 input.inp::placeholder{color:#5b5b70}
+select.inp option{background:#0b0b14;color:#ececf2}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 @media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
@@ -149,6 +157,7 @@ input.inp::placeholder{color:#5b5b70}
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04120c;
   box-shadow:0 10px 28px -8px rgba(16,185,129,.5)}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 36px -8px rgba(16,185,129,.6)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
 .btn-ghost{background:var(--card);border:1px solid var(--border);color:var(--text)}
 .btn-ghost:hover{background:var(--card-hover);border-color:rgba(16,185,129,.3)}
 .btn-sm{padding:9px 16px;font-size:13px}
@@ -163,13 +172,34 @@ input.inp::placeholder{color:#5b5b70}
 .upload-zone{border:2px dashed rgba(255,255,255,.14);border-radius:14px;padding:30px;
   text-align:center;cursor:pointer;transition:all .3s;margin-top:10px}
 .upload-zone:hover{border-color:var(--accent);background:rgba(16,185,129,.04)}
-.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
+.upload-zone.dragover{border-color:var(--accent);background:rgba(16,185,129,.08);transform:scale(1.01)}
+
+/* Live upload status */
+.upload-status{margin-top:14px;padding:12px 16px;border-radius:12px;
+  background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);
+  display:none;align-items:center;gap:12px;font-size:13px}
+.upload-status.show{display:flex}
+.upload-status.error{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#fca5a5}
+.upload-status.success{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.4);color:#6ee7b7}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar{flex:1;height:5px;background:rgba(255,255,255,.1);border-radius:100px;overflow:hidden}
+.progress-bar span{display:block;height:100%;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  border-radius:100px;transition:width .3s}
+
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
   gap:10px;margin-top:14px}
 .thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;
-  border:1px solid var(--border)}
-.thumb img{width:100%;height:100%;object-fit:cover}
-.thumb .rm{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;
-  background:rgba(239,68,68,.9);color:#fff;font-size:12px;display:grid;place-items:center;cursor:pointer}
+  border:1px solid var(--border);background:#0f1420;animation:thumbIn .4s}
+@keyframes thumbIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .rm{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;
+  background:rgba(239,68,68,.95);color:#fff;font-size:12px;display:grid;place-items:center;
+  cursor:pointer;border:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.thumb .badge{position:absolute;bottom:5px;left:5px;padding:2px 7px;border-radius:6px;
+  background:rgba(16,185,129,.9);color:#04120c;font-size:10px;font-weight:700}
 
 /* ============ ID CARD RESULT ============ */
 .id-card{text-align:center;padding:40px 20px}
@@ -247,7 +277,6 @@ input.inp::placeholder{color:#5b5b70}
 /* ============ MISC ============ */
 .empty{text-align:center;padding:60px 20px;color:var(--muted)}
 .empty .em{font-size:52px;margin-bottom:14px;opacity:.5}
-.link{color:var(--accent);cursor:pointer;font-weight:600}
 .hidden{display:none!important}
 .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--muted);
   font-size:13.5px;margin:24px 0 8px;cursor:pointer;padding:6px 0;transition:color .2s}
@@ -266,7 +295,7 @@ input.inp::placeholder{color:#5b5b70}
 <!-- NAV -->
 <nav>
   <div class="brand" onclick="showView('home')" style="cursor:pointer">
-    <div class="brand-logo">🏠</div> RentEasy
+    <div class="brand-logo">🏠</div> DeraFind
   </div>
   <div class="nav-links">
     <button class="nav-btn" onclick="showView('home')">Home</button>
@@ -351,25 +380,36 @@ input.inp::placeholder{color:#5b5b70}
     <div class="form-step" id="step2">
       <h3 style="font-size:17px;margin-bottom:4px">Rooms & Flats Availability</h3>
       <p style="color:var(--muted);font-size:12.5px;margin-bottom:16px">Set how many rooms/flats you have and their monthly price (₹).</p>
-
       <div id="type-fields"></div>
-
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="ownerBack(2)">← Back</button>
         <button class="btn btn-primary" onclick="ownerNext(2)">Continue →</button>
       </div>
     </div>
 
-    <!-- STEP 3 -->
+    <!-- STEP 3: ULTRA-FAST CLOUDINARY UPLOAD -->
     <div class="form-step" id="step3">
       <h3 style="font-size:17px;margin-bottom:4px">Property Photos <span style="color:var(--muted);font-weight:400;font-size:13px">(optional)</span></h3>
-      <p style="color:var(--muted);font-size:12.5px;margin-bottom:16px">Add up to 4 images. Skip if you don't have any.</p>
-      <div class="upload-zone" onclick="document.getElementById('img-input').click()">
+      <p style="color:var(--muted);font-size:12.5px;margin-bottom:16px">
+        ⚡ Auto-compressed to &lt;200KB & uploaded in 4-5 seconds. Up to 4 photos.
+      </p>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('img-input').click()">
         <div style="font-size:34px;margin-bottom:8px">📸</div>
-        <div style="font-size:14px;font-weight:600">Click to upload photos</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">JPG/PNG · auto-compressed</div>
+        <div style="font-size:14px;font-weight:600">Click or drag photos here</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">JPG / PNG · max 4 · auto-optimized</div>
       </div>
       <input type="file" id="img-input" accept="image/*" multiple style="display:none" onchange="handleImages(event)">
+      
+      <!-- Live upload status -->
+      <div class="upload-status" id="upload-status">
+        <div class="spinner" id="up-spinner"></div>
+        <div style="flex:1">
+          <div id="up-text" style="font-weight:600">Optimizing...</div>
+          <div class="progress-bar"><span id="up-bar"></span></div>
+        </div>
+        <div id="up-count" style="font-size:12px;color:var(--muted)">0/0</div>
+      </div>
+
       <div class="thumb-grid" id="thumb-grid"></div>
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="ownerBack(3)">← Back</button>
@@ -385,11 +425,9 @@ input.inp::placeholder{color:#5b5b70}
       <input class="inp" type="password" id="o-pass" placeholder="Minimum 6 characters">
       <label class="lbl">Confirm Password *</label>
       <input class="inp" type="password" id="o-pass2" placeholder="Re-enter password">
-
       <div class="warn-box">
         ⚠️ <b>Important:</b> Your 6-digit ID and password will be shown after submission. <b>Remember them carefully.</b> There is no password recovery option — if you forget, you'll lose access to your listing.
       </div>
-
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="ownerBack(4)">← Back</button>
         <button class="btn btn-primary" id="create-btn" onclick="createOwner()">Create My Listing ✓</button>
@@ -444,14 +482,12 @@ input.inp::placeholder{color:#5b5b70}
       <button class="btn btn-ghost btn-sm" onclick="ownerLogout()">Logout</button>
     </div>
   </div>
-
   <div class="stat-grid">
     <div class="stat"><div class="num" id="dash-rooms">0</div><div class="lbl2">Rooms Listed</div></div>
     <div class="stat"><div class="num" id="dash-flats">0</div><div class="lbl2">Flats Listed</div></div>
     <div class="stat"><div class="num" id="dash-bookings">0</div><div class="lbl2">Total Bookings</div></div>
     <div class="stat"><div class="num" id="dash-unread">0</div><div class="lbl2">Unread</div></div>
   </div>
-
   <div class="panel" style="margin-top:10px">
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">📩 Bookings & Enquiries</h3>
     <div id="bookings-list"></div>
@@ -468,7 +504,6 @@ input.inp::placeholder{color:#5b5b70}
     </div>
     <div id="list-count" style="color:var(--muted);font-size:13.5px"></div>
   </div>
-
   <div class="toolbar">
     <input class="inp" id="f-search" placeholder="🔍 Search owner name..." oninput="renderList()">
     <input class="inp" id="f-loc" placeholder="📍 Filter by location..." oninput="renderList()">
@@ -476,7 +511,6 @@ input.inp::placeholder{color:#5b5b70}
     <input class="inp" id="f-max" type="number" placeholder="Max ₹" oninput="renderList()" style="max-width:110px">
     <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
   </div>
-
   <div class="list-grid" id="list-grid"></div>
 </section>
 
@@ -527,19 +561,16 @@ input.inp::placeholder{color:#5b5b70}
     <div><h2>Admin Dashboard</h2><p>All listings & analytics</p></div>
     <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Logout</button>
   </div>
-
   <div class="stat-grid">
     <div class="stat"><div class="num" id="a-owners">0</div><div class="lbl2">Total Owners</div></div>
     <div class="stat"><div class="num" id="a-rooms">0</div><div class="lbl2">Total Rooms</div></div>
     <div class="stat"><div class="num" id="a-flats">0</div><div class="lbl2">Total Flats</div></div>
     <div class="stat"><div class="num" id="a-bookings">0</div><div class="lbl2">Total Bookings</div></div>
   </div>
-
   <div class="panel" style="margin-bottom:20px">
     <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">🏆 Most Active Owners (by bookings)</h3>
     <div id="analytics-list"></div>
   </div>
-
   <div class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
       <h3 style="font-size:16px;font-weight:700">📋 All Listings</h3>
@@ -556,39 +587,51 @@ input.inp::placeholder{color:#5b5b70}
 </main>
 
 <script>
-/* ==================================================================
-   1) FIREBASE SETUP
-================================================================== */
-const firebaseConfig = {
-  databaseURL: "https://surajautopost-default-rtdb.firebaseio.com/"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+/* ================================================================
+   ✅ CONFIG — यहाँ अपनी DETAILS पेस्ट करो
+================================================================ */
+const CLOUD_NAME   = "pcvmxlg2";        // 🔴 Cloudinary Cloud Name
+const UPLOAD_PRESET = "roomrent_unsigned";    // 🔴 Unsigned upload preset
+const ADMIN_PASS   = "admin@123";                   // 🔴 Admin password
+const FIREBASE_URL = "https://surajautopost-default-rtdb.firebaseio.com/";
 
-const ADMIN_PASS = "admin@123"; // 🔴 change this to your own password
+/* ================================================================
+   ✅ FIREBASE INIT (safe — script crash nahi hoga)
+================================================================ */
+let db = null;
+try {
+  if (typeof firebase === 'undefined') throw new Error('Firebase SDK load nahi hua');
+  firebase.initializeApp({ databaseURL: FIREBASE_URL });
+  db = firebase.database();
+  console.log('✅ Firebase connected');
+} catch (e) {
+  console.error('❌ Firebase init failed:', e);
+  setTimeout(() => alert('⚠️ Firebase connect nahi hua: ' + e.message), 800);
+}
 
-/* ==================================================================
-   2) GLOBAL STATE
-================================================================== */
+/* ================================================================
+   ✅ GLOBAL STATE
+================================================================ */
 const state = {
   step: 1,
   lat: null, lng: null,
-  images: [],          // base64 strings
-  editId: null,        // if editing existing listing
-  currentType: null,   // 'girls' | 'boys' | 'family'
-  currentOwner: null,  // selected owner for booking
+  images: [],              // { url, thumb, publicId } — Cloudinary URLs
+  editId: null,
+  currentType: null,
+  currentOwner: null,
   allOwners: {},
   adminLogged: false,
   loggedOwnerId: null,
   map: null,
   marker: null,
+  uploading: false,
 };
 
 const $ = id => document.getElementById(id);
 
-/* ==================================================================
-   3) UTIL
-================================================================== */
+/* ================================================================
+   ✅ UTILS
+================================================================ */
 function toast(msg, type = '') {
   const t = document.createElement('div');
   t.className = 'toast ' + type;
@@ -597,49 +640,207 @@ function toast(msg, type = '') {
   setTimeout(() => { t.style.opacity = 0; setTimeout(() => t.remove(), 400); }, 3200);
 }
 
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const v = $('view-' + name);
   if (v) v.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
   if (name === 'owner') {
     setTimeout(() => { initMap(); if (state.map) state.map.invalidateSize(); }, 250);
   }
 }
 
 function copyId() {
-  const txt = $('result-id').textContent;
-  navigator.clipboard.writeText(txt).then(() => toast('ID copied to clipboard ✓', 'success'));
+  navigator.clipboard.writeText($('result-id').textContent)
+    .then(() => toast('ID copied ✓', 'success'));
 }
 
-/* ==================================================================
-   4) NAV HELPERS
-================================================================== */
+/* ================================================================
+   ✅ CLOUDINARY UPLOAD (ULTRA-FAST)
+================================================================ */
+async function uploadToCloudinary(file) {
+  if (!CLOUD_NAME || CLOUD_NAME === 'pcvmxlg2') {
+    throw new Error('Cloudinary CLOUD_NAME set nahi hai. Code ke top par apni details paste karo.');
+  }
+  if (!UPLOAD_PRESET || UPLOAD_PRESET === 'roomrent_unsigned') {
+    throw new Error('Cloudinary UPLOAD_PRESET set nahi hai. Unsigned preset banao.');
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('folder', 'derafind');
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Cloudinary upload failed');
+  }
+  return res.json();
+}
+
+/**
+ * Main ultra-fast pipeline:
+ *   1. Compress (browser-image-compression) → <200KB
+ *   2. Upload to Cloudinary
+ *   3. Save secure_url to state.images
+ */
+async function processAndUpload(file) {
+  // ---- Step 1: Compress ----
+  updateUploadStatus('optimizing', '🔄 Optimizing image...', 20);
+  let compressed = file;
+  try {
+    compressed = await imageCompression(file, {
+      maxSizeMB: 0.2,
+      maxWidthOrHeight: 1280,
+      useWebWorker: true,
+      initialQuality: 0.82,
+      fileType: 'image/jpeg',
+    });
+    console.log(`Compressed: ${(file.size/1024).toFixed(0)}KB → ${(compressed.size/1024).toFixed(0)}KB`);
+  } catch (e) {
+    console.warn('Compression failed, using original:', e);
+    compressed = file;
+  }
+
+  // ---- Step 2: Upload ----
+  updateUploadStatus('uploading', '☁️ Uploading to cloud...', 55);
+  const data = await uploadToCloudinary(compressed);
+
+  // ---- Step 3: Save URL ----
+  const img = {
+    url: data.secure_url,
+    thumb: data.secure_url.replace('/upload/', '/upload/w_400,q_auto/'),
+    publicId: data.public_id,
+    size: data.bytes
+  };
+  state.images.push(img);
+  renderThumbs();
+  return img;
+}
+
+function updateUploadStatus(phase, text, pct) {
+  const box = $('upload-status');
+  box.classList.add('show');
+  box.classList.remove('error', 'success');
+  $('up-text').textContent = text;
+  $('up-bar').style.width = pct + '%';
+  $('up-spinner').style.display = (phase === 'done' || phase === 'error') ? 'none' : 'block';
+}
+
+function hideUploadStatus(delay = 1800) {
+  setTimeout(() => $('upload-status').classList.remove('show'), delay);
+}
+
+/* ================================================================
+   ✅ HANDLE FILE SELECT / DRAG-DROP
+================================================================ */
+async function handleImages(e) {
+  if (state.uploading) return toast('Wait — upload in progress', 'error');
+  const files = Array.from(e.target.files || []);
+  e.target.value = '';
+  await processFiles(files);
+}
+
+async function processFiles(files) {
+  const room = 4 - state.images.length;
+  if (room <= 0) return toast('Max 4 photos allowed', 'error');
+
+  const toProcess = files.filter(f => f.type.startsWith('image/')).slice(0, room);
+  if (!toProcess.length) return;
+
+  state.uploading = true;
+  let done = 0;
+  $('up-count').textContent = `0/${toProcess.length}`;
+
+  for (const f of toProcess) {
+    try {
+      updateUploadStatus('uploading', `☁️ Uploading ${done + 1}/${toProcess.length}...`,
+        Math.round((done / toProcess.length) * 90 + 10));
+      await processAndUpload(f);
+      done++;
+      $('up-count').textContent = `${done}/${toProcess.length}`;
+    } catch (err) {
+      console.error('Upload error:', err);
+      updateUploadStatus('error', '❌ ' + err.message, 100);
+      $('upload-status').classList.add('error');
+      toast(err.message, 'error');
+      break;
+    }
+  }
+
+  state.uploading = false;
+
+  if (done === toProcess.length) {
+    updateUploadStatus('done', '✅ All photos uploaded successfully!', 100);
+    $('upload-status').classList.add('success');
+    hideUploadStatus(2200);
+    toast(`${done} photo(s) uploaded! ✓`, 'success');
+  }
+}
+
+// Drag & drop
+window.addEventListener('load', () => {
+  const zone = $('upload-zone');
+  if (!zone) return;
+  ['dragenter', 'dragover'].forEach(ev =>
+    zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('dragover'); }));
+  ['dragleave', 'drop'].forEach(ev =>
+    zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('dragover'); }));
+  zone.addEventListener('drop', e => {
+    if (state.uploading) return toast('Wait — upload in progress', 'error');
+    processFiles(Array.from(e.dataTransfer.files || []));
+  });
+});
+
+function renderThumbs() {
+  $('thumb-grid').innerHTML = state.images.map((img, i) => `
+    <div class="thumb">
+      <img src="${img.thumb || img.url}" loading="lazy" alt="photo ${i + 1}">
+      <button class="rm" onclick="removeImg(${i})" title="Remove">✕</button>
+      <div class="badge">${img.size ? Math.round(img.size / 1024) + 'KB' : '✓'}</div>
+    </div>
+  `).join('');
+}
+
+function removeImg(i) {
+  state.images.splice(i, 1);
+  renderThumbs();
+}
+
+/* ================================================================
+   ✅ NAV HELPERS
+================================================================ */
 function openOwnerLogin() { showView('ownerLogin'); }
 function openAdmin() { state.adminLogged ? showView('admin') : showView('adminLogin'); }
 
-/* ==================================================================
-   5) OWNER FLOW — STEP CONTROLS
-================================================================== */
+/* ================================================================
+   ✅ OWNER FLOW
+================================================================ */
 function startOwnerFlow() {
   state.step = 1; state.editId = null; state.images = [];
   state.lat = null; state.lng = null;
   resetOwnerForm();
+  try { renderTypeFields(); } catch (e) { console.warn(e); }
   setStep(1);
   $('owner-form-title').textContent = 'List Your Property';
   showView('owner');
 }
 
 function resetOwnerForm() {
-  ['o-name','o-mobile','o-state','o-district','o-village','o-pass','o-pass2'].forEach(id => $(id).value = '');
-  ['boys','girls','family'].forEach(t => {
-    ['rooms','flats'].forEach(k => {
-      $(`${t}-${k}-count`).value = '';
-      $(`${t}-${k}-price`).value = '';
-    });
+  ['o-name','o-mobile','o-state','o-district','o-village','o-pass','o-pass2'].forEach(id => {
+    const el = $(id); if (el) el.value = '';
   });
   $('thumb-grid').innerHTML = '';
+  $('upload-status').classList.remove('show', 'error', 'success');
   renderTypeFields();
 }
 
@@ -648,27 +849,24 @@ function setStep(n) {
   for (let i = 1; i <= 4; i++) $('step' + i).classList.remove('active');
   $('step-result').classList.remove('active');
   if (n <= 4) $('step' + n).classList.add('active');
-  for (let i = 1; i <= 4; i++) {
-    $('ps' + i).classList.toggle('done', i < n);
-  }
+  for (let i = 1; i <= 4; i++) $('ps' + i).classList.toggle('done', i < n);
   if (n === 4) $('ps4').classList.add('done');
 }
 
 function validateStep(n) {
   if (n === 1) {
-    if (!$('o-name').value.trim()) return 'Please enter your name';
+    if (!$('o-name').value.trim()) return 'Enter your name';
     const m = $('o-mobile').value.trim();
-    if (!/^[6-9]\d{9}$/.test(m)) return 'Enter a valid 10-digit mobile number';
+    if (!/^[6-9]\d{9}$/.test(m)) return 'Enter valid 10-digit mobile';
     if (!$('o-state').value.trim() || !$('o-district').value.trim() || !$('o-village').value.trim())
-      return 'Please fill state, district and village';
+      return 'Fill state, district and village';
   }
   if (n === 2) {
-    // must have at least one room or flat somewhere
     let total = 0;
     ['boys','girls','family'].forEach(t => ['rooms','flats'].forEach(k => {
-      total += parseInt($(`${t}-${k}-count`).value) || 0;
+      total += parseInt($(`${t}-${k}-count`)?.value) || 0;
     }));
-    if (total === 0) return 'Please add at least one room or flat';
+    if (total === 0) return 'Add at least one room or flat';
   }
   return null;
 }
@@ -678,19 +876,17 @@ function ownerNext(n) {
   if (err) return toast(err, 'error');
   setStep(n + 1);
 }
-
 function ownerBack(n) { setStep(n - 1); }
 
-/* ==================================================================
-   6) TYPE FIELDS (rooms/flats for boys/girls/family)
-================================================================== */
 function renderTypeFields() {
+  const el = $('type-fields');
+  if (!el) return;
   const types = [
-    { key: 'boys', label: '👨 Boys', color: '#3b82f6' },
-    { key: 'girls', label: '👩 Girls', color: '#ec4899' },
-    { key: 'family', label: '👨‍👩‍👧 Family', color: '#10b981' },
+    { key: 'boys',   label: '👨 Boys' },
+    { key: 'girls',  label: '👩 Girls' },
+    { key: 'family', label: '👨‍👩‍👧 Family' },
   ];
-  $('type-fields').innerHTML = types.map(t => `
+  el.innerHTML = types.map(t => `
     <div style="padding:16px;border-radius:12px;background:rgba(255,255,255,.025);border:1px solid var(--border);margin-bottom:14px">
       <div style="font-size:14px;font-weight:700;margin-bottom:12px">${t.label}</div>
       <div class="grid2">
@@ -711,65 +907,20 @@ function renderTypeFields() {
   `).join('');
 }
 
-/* ==================================================================
-   7) IMAGE UPLOAD (compressed to base64)
-================================================================== */
-function compressImage(file, maxW = 900, quality = 0.72) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxW) { height = height * maxW / width; width = maxW; }
-        const c = document.createElement('canvas');
-        c.width = width; c.height = height;
-        c.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(c.toDataURL('image/jpeg', quality));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-async function handleImages(e) {
-  const files = Array.from(e.target.files).slice(0, 4 - state.images.length);
-  for (const f of files) {
-    if (!f.type.startsWith('image/')) continue;
-    const b64 = await compressImage(f);
-    state.images.push(b64);
-  }
-  e.target.value = '';
-  renderThumbs();
-}
-
-function renderThumbs() {
-  $('thumb-grid').innerHTML = state.images.map((src, i) => `
-    <div class="thumb">
-      <img src="${src}">
-      <div class="rm" onclick="removeImg(${i})">✕</div>
-    </div>
-  `).join('');
-}
-
-function removeImg(i) { state.images.splice(i, 1); renderThumbs(); }
-
-/* ==================================================================
-   8) MAP (Leaflet + Nominatim)
-================================================================== */
+/* ================================================================
+   ✅ MAP
+================================================================ */
 function initMap() {
   if (state.map) return;
   const mapEl = $('map');
-  if (!mapEl) return;
+  if (!mapEl || typeof L === 'undefined') return;
   state.map = L.map('map').setView([20.5937, 78.9629], 5);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap', maxZoom: 19
   }).addTo(state.map);
   state.map.on('click', e => {
-    const { lat, lng } = e.latlng;
-    setMarker(lat, lng);
-    reverseGeocode(lat, lng);
+    setMarker(e.latlng.lat, e.latlng.lng);
+    reverseGeocode(e.latlng.lat, e.latlng.lng);
   });
 }
 
@@ -785,17 +936,19 @@ async function reverseGeocode(lat, lng) {
     const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
     const d = await r.json();
     const a = d.address || {};
-    if (a.state) $('o-state').value = a.state;
-    if (a.state_district || a.county) $('o-district').value = a.state_district || a.county;
-    if (a.village || a.town || a.city || a.suburb) $('o-village').value = a.village || a.town || a.city || a.suburb;
-  } catch (e) { /* silently ignore */ }
+    if (a.state && $('o-state')) $('o-state').value = a.state;
+    if ((a.state_district || a.county) && $('o-district'))
+      $('o-district').value = a.state_district || a.county;
+    if ((a.village || a.town || a.city || a.suburb) && $('o-village'))
+      $('o-village').value = a.village || a.town || a.city || a.suburb;
+  } catch (e) { /* silent */ }
 }
 
-/* ==================================================================
-   9) CREATE / UPDATE OWNER LISTING
-================================================================== */
+/* ================================================================
+   ✅ CREATE / UPDATE OWNER
+================================================================ */
 function collectOwnerData(id) {
-  const n = k => parseInt($(k).value) || 0;
+  const n = k => parseInt($(k)?.value) || 0;
   return {
     ownerId: id,
     name: $('o-name').value.trim(),
@@ -805,7 +958,7 @@ function collectOwnerData(id) {
     district: $('o-district').value.trim(),
     village: $('o-village').value.trim(),
     lat: state.lat, lng: state.lng,
-    images: state.images,
+    images: state.images.map(x => ({ url: x.url, thumb: x.thumb, publicId: x.publicId })),
     rooms: {
       boys:   { count: n('boys-rooms-count'),   price: n('boys-rooms-price') },
       girls:  { count: n('girls-rooms-count'),  price: n('girls-rooms-price') },
@@ -821,24 +974,26 @@ function collectOwnerData(id) {
 }
 
 async function generateUniqueId() {
+  if (!db) throw new Error('Firebase not connected');
   for (let i = 0; i < 15; i++) {
     const id = String(Math.floor(100000 + Math.random() * 900000));
     const snap = await db.ref('owners/' + id).once('value');
     if (!snap.exists()) return id;
   }
-  throw new Error('Could not generate ID');
+  throw new Error('ID generation failed');
 }
 
 async function createOwner() {
   const p1 = $('o-pass').value, p2 = $('o-pass2').value;
-  if (p1.length < 6) return toast('Password must be at least 6 characters', 'error');
+  if (p1.length < 6) return toast('Password min 6 characters', 'error');
   if (p1 !== p2) return toast('Passwords do not match', 'error');
+  if (!db) return toast('Firebase not connected', 'error');
+  if (state.uploading) return toast('Wait — images still uploading', 'error');
 
   const btn = $('create-btn');
   btn.disabled = true; btn.textContent = 'Creating...';
 
   try {
-    // EDIT MODE
     if (state.editId) {
       const snap = await db.ref('owners/' + state.editId).once('value');
       const existing = snap.val();
@@ -847,14 +1002,13 @@ async function createOwner() {
       data.bookings = existing.bookings || null;
       data.bookingsCount = existing.bookingsCount || 0;
       await db.ref('owners/' + state.editId).set(data);
-      toast('Listing updated successfully ✓', 'success');
+      toast('Listing updated ✓', 'success');
       state.editId = null;
       showView('ownerDash');
       loadOwnerDashboard(state.loggedOwnerId);
       return;
     }
 
-    // CREATE MODE
     const id = await generateUniqueId();
     const data = collectOwnerData(id);
     data.createdAt = Date.now();
@@ -872,18 +1026,19 @@ async function createOwner() {
   }
 }
 
-/* ==================================================================
-   10) OWNER LOGIN + DASHBOARD
-================================================================== */
+/* ================================================================
+   ✅ OWNER LOGIN + DASHBOARD
+================================================================ */
 async function ownerLogin() {
+  if (!db) return toast('Firebase not connected', 'error');
   const id = $('login-id').value.trim();
   const pass = $('login-pass').value;
-  if (!/^\d{6}$/.test(id)) return toast('Enter a valid 6-digit ID', 'error');
+  if (!/^\d{6}$/.test(id)) return toast('Enter valid 6-digit ID', 'error');
   if (!pass) return toast('Enter password', 'error');
 
   try {
     const snap = await db.ref('owners/' + id).once('value');
-    if (!snap.exists()) return toast('No listing found with this ID', 'error');
+    if (!snap.exists()) return toast('No listing with this ID', 'error');
     const data = snap.val();
     if (data.password !== pass) return toast('Incorrect password', 'error');
 
@@ -891,11 +1046,10 @@ async function ownerLogin() {
     $('login-id').value = ''; $('login-pass').value = '';
     loadOwnerDashboard(id);
     showView('ownerDash');
-    toast('Welcome back, ' + data.name + '!', 'success');
+    toast('Welcome, ' + data.name + '!', 'success');
 
-    // notification for unread bookings
     const unread = Object.values(data.bookings || {}).filter(b => !b.read).length;
-    if (unread > 0) setTimeout(() => toast(`🔔 You have ${unread} new booking(s)!`, 'success'), 700);
+    if (unread > 0) setTimeout(() => toast(`🔔 ${unread} new booking(s)!`, 'success'), 700);
   } catch (e) { toast('Login failed: ' + e.message, 'error'); }
 }
 
@@ -906,6 +1060,7 @@ function ownerLogout() {
 }
 
 async function loadOwnerDashboard(id) {
+  if (!db) return;
   const snap = await db.ref('owners/' + id).once('value');
   if (!snap.exists()) return toast('Listing not found', 'error');
   const d = snap.val();
@@ -928,7 +1083,7 @@ async function loadOwnerDashboard(id) {
   $('dash-unread').textContent = bookings.filter(b => !b.read).length;
 
   if (!bookings.length) {
-    $('bookings-list').innerHTML = `<div class="empty"><div class="em">📭</div><p>No bookings yet. Share your listing to get enquiries!</p></div>`;
+    $('bookings-list').innerHTML = `<div class="empty"><div class="em">📭</div><p>No bookings yet. Share your listing!</p></div>`;
     return;
   }
   $('bookings-list').innerHTML = bookings.map(b => `
@@ -951,20 +1106,23 @@ async function loadOwnerDashboard(id) {
 }
 
 async function markRead(key) {
+  if (!db) return;
   await db.ref(`owners/${state.loggedOwnerId}/bookings/${key}/read`).set(true);
   loadOwnerDashboard(state.loggedOwnerId);
   toast('Marked as read');
 }
 
 function editListing() {
-  const id = state.loggedOwnerId;
-  if (!id) return;
-  db.ref('owners/' + id).once('value').then(snap => {
+  if (!db || !state.loggedOwnerId) return;
+  db.ref('owners/' + state.loggedOwnerId).once('value').then(snap => {
     const d = snap.val();
     if (!d) return;
-    state.editId = id;
+    state.editId = state.loggedOwnerId;
     state.lat = d.lat; state.lng = d.lng;
-    state.images = d.images || [];
+    // Support both old (string) and new (object) image formats
+    state.images = (d.images || []).map(x => typeof x === 'string'
+      ? { url: x, thumb: x, publicId: '' }
+      : x);
     $('o-name').value = d.name || '';
     $('o-mobile').value = d.mobile || '';
     $('o-state').value = d.state || '';
@@ -975,8 +1133,9 @@ function editListing() {
     renderTypeFields();
     ['boys','girls','family'].forEach(t => {
       ['rooms','flats'].forEach(k => {
-        $(`${t}-${k}-count`).value = d[k]?.[t]?.count || '';
-        $(`${t}-${k}-price`).value = d[k]?.[t]?.price || '';
+        const c = $(`${t}-${k}-count`), p = $(`${t}-${k}-price`);
+        if (c) c.value = d[k]?.[t]?.count || '';
+        if (p) p.value = d[k]?.[t]?.price || '';
       });
     });
     renderThumbs();
@@ -986,9 +1145,9 @@ function editListing() {
   });
 }
 
-/* ==================================================================
-   11) VIEWER LIST (girls / boys / family)
-================================================================== */
+/* ================================================================
+   ✅ VIEWER LIST
+================================================================ */
 async function openList(type) {
   state.currentType = type;
   const titles = {
@@ -998,21 +1157,25 @@ async function openList(type) {
   };
   $('list-title').textContent = titles[type];
   $('list-sub').textContent = 'Verified owners near you';
-  $('list-grid').innerHTML = `<div class="empty"><div class="em">⏳</div><p>Loading listings...</p></div>`;
+  $('list-grid').innerHTML = `<div class="empty"><div class="em">⏳</div><p>Loading...</p></div>`;
   showView('list');
 
+  if (!db) {
+    $('list-grid').innerHTML = `<div class="empty"><div class="em">⚠️</div><p>Firebase not connected</p></div>`;
+    return;
+  }
   try {
     const snap = await db.ref('owners').once('value');
     state.allOwners = snap.val() || {};
     renderList();
   } catch (e) {
-    $('list-grid').innerHTML = `<div class="empty"><div class="em">⚠️</div><p>Failed to load: ${e.message}</p></div>`;
+    $('list-grid').innerHTML = `<div class="empty"><div class="em">⚠️</div><p>Failed: ${e.message}</p></div>`;
   }
 }
 
 function getMinPriceForType(o, type) {
-  const r = o.rooms?.[type], f = o.flats?.[type];
   const prices = [];
+  const r = o.rooms?.[type], f = o.flats?.[type];
   if (r && r.count > 0 && r.price > 0) prices.push(r.price);
   if (f && f.count > 0 && f.price > 0) prices.push(f.price);
   return prices.length ? Math.min(...prices) : null;
@@ -1034,14 +1197,11 @@ function renderList() {
       if (!hay.includes(loc)) return false;
     }
     const min = getMinPriceForType(o, type);
-    if (min !== null) {
-      if (min < minP || min > maxP) return false;
-    }
+    if (min !== null && (min < minP || min > maxP)) return false;
     return true;
   });
 
   $('list-count').textContent = `${list.length} listing(s) found`;
-
   if (!list.length) {
     $('list-grid').innerHTML = `<div class="empty"><div class="em">🔍</div><p>No listings match your filters.</p></div>`;
     return;
@@ -1051,12 +1211,13 @@ function renderList() {
 
   $('list-grid').innerHTML = list.map(o => {
     const min = getMinPriceForType(o, type);
-    const img = (o.images && o.images[0]) ? o.images[0] : '';
+    const firstImg = o.images?.[0];
+    const imgUrl = firstImg ? (typeof firstImg === 'string' ? firstImg : firstImg.thumb || firstImg.url) : '';
     const roomC = o.rooms?.[type]?.count || 0;
     const flatC = o.flats?.[type]?.count || 0;
     return `
       <div class="owner-card" onclick="openDetail('${o.ownerId}')">
-        <div class="owner-img" style="${img ? `background-image:url('${img}')` : ''}">
+        <div class="owner-img" style="${imgUrl ? `background-image:url('${imgUrl}')` : ''}">
           ${min !== null ? `<div class="owner-price-tag">from ₹${min.toLocaleString()}/mo</div>` : ''}
         </div>
         <div class="owner-body">
@@ -1078,18 +1239,21 @@ function clearFilters() {
   renderList();
 }
 
-/* ==================================================================
-   12) DETAIL
-================================================================== */
+/* ================================================================
+   ✅ DETAIL
+================================================================ */
 function openDetail(ownerId) {
   const o = state.allOwners[ownerId];
   if (!o) return;
   state.currentOwner = o;
   const type = state.currentType;
-  const heroImg = (o.images && o.images[0]) ? o.images[0] : '';
+  const firstImg = o.images?.[0];
+  const heroImg = firstImg ? (typeof firstImg === 'string' ? firstImg : firstImg.url) : '';
 
   const roomData = o.rooms?.[type] || { count: 0, price: 0 };
   const flatData = o.flats?.[type] || { count: 0, price: 0 };
+
+  const allImages = (o.images || []).map(x => typeof x === 'string' ? x : x.url).filter(Boolean);
 
   $('detail-content').innerHTML = `
     <div class="detail-hero" style="${heroImg ? `background-image:url('${heroImg}')` : ''}">
@@ -1098,25 +1262,21 @@ function openDetail(ownerId) {
         <div class="owner-loc">📍 ${esc(o.village)}, ${esc(o.district)}, ${esc(o.state)}</div>
       </div>
     </div>
-
     <div class="panel" style="margin-top:20px">
       <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">Pricing</h3>
       <div class="price-chips">
         ${roomData.count > 0 ? `<div class="chip">🛏 Room · ${roomData.count} available · <b>₹${roomData.price.toLocaleString()}/mo</b></div>` : ''}
         ${flatData.count > 0 ? `<div class="chip">🏢 Flat · ${flatData.count} available · <b>₹${flatData.price.toLocaleString()}/mo</b></div>` : ''}
-        ${roomData.count === 0 && flatData.count === 0 ? `<div style="color:var(--muted)">No ${type} availability listed</div>` : ''}
+        ${roomData.count === 0 && flatData.count === 0 ? `<div style="color:var(--muted)">No ${type} availability</div>` : ''}
       </div>
-
       <h3 style="font-size:16px;font-weight:700;margin:18px 0 10px">Contact</h3>
       <div class="chip" style="display:inline-block">📞 ${esc(o.mobile)}</div>
-
-      ${o.images && o.images.length > 1 ? `
+      ${allImages.length > 1 ? `
         <h3 style="font-size:16px;font-weight:700;margin:18px 0 10px">Photos</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
-          ${o.images.map(src => `<img src="${src}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--border)">`).join('')}
+          ${allImages.map(src => `<img src="${src}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--border)">`).join('')}
         </div>
       ` : ''}
-
       <div class="btn-row" style="margin-top:24px">
         <button class="btn btn-primary" onclick="openBooking()">Book This Property →</button>
       </div>
@@ -1128,9 +1288,9 @@ function openDetail(ownerId) {
 function backToList() { showView('list'); }
 function backToDetail() { showView('detail'); }
 
-/* ==================================================================
-   13) BOOKING
-================================================================== */
+/* ================================================================
+   ✅ BOOKING
+================================================================ */
 function openBooking() {
   const o = state.currentOwner;
   if (!o) return;
@@ -1142,7 +1302,7 @@ function openBooking() {
 
 async function submitBooking() {
   const o = state.currentOwner;
-  if (!o) return;
+  if (!o || !db) return;
   const name = $('bk-name').value.trim();
   const mobile = $('bk-mobile').value.trim();
   const address = $('bk-addr').value.trim();
@@ -1162,17 +1322,16 @@ async function submitBooking() {
     };
     await db.ref(`owners/${o.ownerId}/bookings`).push(booking);
     await db.ref(`owners/${o.ownerId}/bookingsCount`).transaction(v => (v || 0) + 1);
-
-    toast('Booking request sent! Owner will contact you soon ✓', 'success');
+    toast('Booking sent! Owner will contact you ✓', 'success');
     setTimeout(() => showView('home'), 1200);
   } catch (e) {
     toast('Booking failed: ' + e.message, 'error');
   }
 }
 
-/* ==================================================================
-   14) ADMIN
-================================================================== */
+/* ================================================================
+   ✅ ADMIN
+================================================================ */
 function adminLogin() {
   if ($('admin-pass').value === ADMIN_PASS) {
     state.adminLogged = true;
@@ -1181,7 +1340,7 @@ function adminLogin() {
     loadAdmin();
     toast('Admin unlocked ✓', 'success');
   } else {
-    toast('Wrong admin password', 'error');
+    toast('Wrong password', 'error');
   }
 }
 
@@ -1192,6 +1351,7 @@ function adminLogout() {
 }
 
 async function loadAdmin() {
+  if (!db) return toast('Firebase not connected', 'error');
   try {
     const snap = await db.ref('owners').once('value');
     state.allOwners = snap.val() || {};
@@ -1281,16 +1441,16 @@ function renderAdminList() {
   }).join('');
 }
 
-/* ==================================================================
-   15) CURSOR GLOW + TILT + INIT
-================================================================== */
+/* ================================================================
+   ✅ CURSOR GLOW + INIT
+================================================================ */
 document.addEventListener('mousemove', e => {
   const g = $('cursor-glow');
+  if (!g) return;
   g.style.left = e.clientX + 'px';
   g.style.top = e.clientY + 'px';
 });
 
-// card spotlight effect
 document.addEventListener('mousemove', e => {
   document.querySelectorAll('.option-card').forEach(card => {
     const r = card.getBoundingClientRect();
@@ -1301,21 +1461,26 @@ document.addEventListener('mousemove', e => {
   });
 });
 
-// ESCAPE helper
-function esc(s) {
-  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-// GSAP hero entry
+/* SAFE GSAP entry (crash-proof) */
 window.addEventListener('load', () => {
   if (window.gsap) {
-    gsap.from('.eyebrow', { y: 20, opacity: 0, duration: 0.7, ease: 'power3.out' });
-    gsap.from('.hero h1', { y: 30, opacity: 0, duration: 0.9, delay: 0.1, ease: 'power3.out' });
-    gsap.from('.hero p', { y: 20, opacity: 0, duration: 0.8, delay: 0.25, ease: 'power3.out' });
-    gsap.from('.option-card', { y: 40, opacity: 0, duration: 0.8, delay: 0.4, stagger: 0.1, ease: 'power3.out' });
+    try {
+      gsap.from('.eyebrow', { y: 20, opacity: 0, duration: 0.7, ease: 'power3.out' });
+      gsap.from('.hero h1', { y: 30, opacity: 0, duration: 0.9, delay: 0.1, ease: 'power3.out' });
+      gsap.from('.hero p', { y: 20, opacity: 0, duration: 0.8, delay: 0.25, ease: 'power3.out' });
+      gsap.from('.option-card', { y: 40, opacity: 0, duration: 0.8, delay: 0.4, stagger: 0.1, ease: 'power3.out' });
+    } catch (e) {
+      document.querySelectorAll('.option-card, .hero h1, .hero p, .eyebrow')
+        .forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+    }
+  } else {
+    document.querySelectorAll('.option-card, .hero h1, .hero p, .eyebrow')
+      .forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
   }
-  renderTypeFields();
 });
+
+// renderTypeFields turant (load ka wait nahi)
+try { renderTypeFields(); } catch (e) { console.warn('renderTypeFields:', e); }
 </script>
 </body>
 </html>
