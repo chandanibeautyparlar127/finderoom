@@ -13,7 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <!-- ✅ Ultra-fast image compression -->
 <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
-<!-- ✅ GSAP (optional, but safe) -->
+<!-- ✅ GSAP -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
 <style>
@@ -34,14 +34,11 @@ a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit}
 
-/* ============ 🔥 FIX: CARDS KO DEFAULT VISIBLE RAKHO ============ */
+/* ============ 🔥 FIX: CARDS VISIBLE ============ */
 .hero h1, .hero p, .eyebrow, .option-card, .option-card * {
   opacity: 1 !important;
   visibility: visible !important;
-  transform: none; /* GSAP transform override nahi hoga, but safe */
 }
-/* GSAP animation enable karne ke liye JS me class add karenge, tab override hoga */
-body.gsap-ready .option-card { transform: none; } /* fallback */
 
 /* ============ ANIMATED BG ============ */
 .bg-layer{position:fixed;inset:0;z-index:-2;overflow:hidden;
@@ -116,16 +113,11 @@ main{padding:0 6vw 80px;max-width:1400px;margin:0 auto}
   backdrop-filter:blur(14px);
   box-shadow: 0 20px 50px -20px rgba(0,0,0,0.8),
               inset 0 1px 0 rgba(255,255,255,0.1);
-  /* 🔥 Force visible */
   opacity: 1 !important;
   visibility: visible !important;
 }
 .option-card::before{
-  content:'';
-  position:absolute;
-  inset:0;
-  opacity:0;
-  transition:opacity .4s;
+  content:'';position:absolute;inset:0;opacity:0;transition:opacity .4s;
   background:radial-gradient(600px circle at var(--mx,50%) var(--my,50%),rgba(16,185,129,.15),transparent 45%);
   pointer-events:none;
 }
@@ -147,13 +139,11 @@ main{padding:0 6vw 80px;max-width:1400px;margin:0 auto}
 .option-card:hover .option-icon{transform:scale(1.12) rotate(-5deg)}
 .option-card h3{font-size:20px;font-weight:700;margin-bottom:8px;letter-spacing:-.4px;color:var(--text)}
 .option-card p{color:var(--muted);font-size:13.5px;line-height:1.55}
-.option-card .arrow{position:absolute;top:26px;right:26px;color:var(--muted);font-size:18px;
-  transition:all .4s}
+.option-card .arrow{position:absolute;top:26px;right:26px;color:var(--muted);font-size:18px;transition:all .4s}
 .option-card:hover .arrow{color:var(--accent);transform:translate(4px,-4px)}
 
 /* ============ SECTION HEAD ============ */
-.section-head{padding:40px 0 20px;display:flex;justify-content:space-between;align-items:flex-end;
-  flex-wrap:wrap;gap:16px}
+.section-head{padding:40px 0 20px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px}
 .section-head h2{font-size:clamp(24px,3vw,36px);font-weight:800;letter-spacing:-1px}
 .section-head p{color:var(--muted);font-size:14px;margin-top:6px}
 
@@ -162,10 +152,8 @@ main{padding:0 6vw 80px;max-width:1400px;margin:0 auto}
   padding:32px;backdrop-filter:blur(16px);position:relative;overflow:hidden}
 .panel-narrow{max-width:640px;margin:40px auto}
 .progress-wrap{display:flex;gap:8px;margin-bottom:26px}
-.progress-step{flex:1;height:5px;border-radius:100px;background:rgba(255,255,255,.07);
-  overflow:hidden;position:relative}
-.progress-step span{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));
-  border-radius:100px;transition:width .6s cubic-bezier(.16,1,.3,1)}
+.progress-step{flex:1;height:5px;border-radius:100px;background:rgba(255,255,255,.07);overflow:hidden;position:relative}
+.progress-step span{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:100px;transition:width .6s cubic-bezier(.16,1,.3,1)}
 .progress-step.done span{width:100%}
 
 .form-step{display:none}
@@ -235,14 +223,27 @@ select.inp option{background:#0b0b14;color:#ececf2}
 .thumb .badge{position:absolute;bottom:5px;left:5px;padding:2px 7px;border-radius:6px;
   background:rgba(16,185,129,.9);color:#04120c;font-size:10px;font-weight:700}
 
+/* ============ 🔥 NEW WARNING BOX ============ */
+.warn-box{
+  background: rgba(251,191,36,0.15);
+  border: 2px solid var(--gold);
+  border-left: 6px solid var(--gold);
+  border-radius: 12px;
+  padding: 20px;
+  font-size: 15px; /* Bada text */
+  color: #fef08a; /* Light Yellow */
+  margin-top: 20px;
+  line-height: 1.7;
+  box-shadow: 0 0 20px rgba(251,191,36,0.2);
+}
+.warn-box b { color: #fff; font-weight: 800; font-size: 16px; }
+
 /* ============ ID RESULT ============ */
 .id-card{text-align:center;padding:40px 20px}
 .id-num{font-size:52px;font-weight:800;letter-spacing:8px;
   background:linear-gradient(135deg,var(--accent),var(--accent2));
   -webkit-background-clip:text;background-clip:text;color:transparent;
   font-variant-numeric:tabular-nums;margin:14px 0}
-.warn-box{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);
-  border-radius:12px;padding:16px;font-size:13px;color:#fcd34d;margin-top:20px;line-height:1.6}
 
 /* ============ LIST CARDS ============ */
 .toolbar{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0 26px;align-items:center}
@@ -396,14 +397,22 @@ select.inp option{background:#0b0b14;color:#ececf2}
         <div><label class="lbl">Full Name *</label><input class="inp" id="o-name" placeholder="Ramesh Kumar"></div>
         <div><label class="lbl">Mobile Number *</label><input class="inp" id="o-mobile" placeholder="9876543210" maxlength="10"></div>
       </div>
-      <label class="lbl">Pick Location on Map</label>
-      <div id="map"></div>
-      <p style="font-size:11.5px;color:var(--muted);margin-top:6px">Click on the map to auto-fill your address below.</p>
+      
+      <!-- 🔥 NEW: Location button via mobile map app -->
+      <label class="lbl">Location (Direct Map se select karein)</label>
+      <button class="btn btn-primary" style="width:100%; margin-bottom:10px; background:linear-gradient(135deg, #4285F4, #34A853);" onclick="openMobileMap()">
+        📍 Google Maps App me location chune
+      </button>
+      <p style="font-size:11.5px;color:var(--muted);margin-bottom:10px">Map app se location select karke wapas aaye, details niche auto-fill ho jayengi.</p>
+
+      <div id="map"></div> <!-- Desktop map fallback -->
+      <p style="font-size:11.5px;color:var(--muted);margin-top:6px">Ya phir desktop me map par click karein.</p>
+
       <div class="grid2">
         <div><label class="lbl">State</label><input class="inp" id="o-state" placeholder="Maharashtra"></div>
         <div><label class="lbl">District</label><input class="inp" id="o-district" placeholder="Pune"></div>
       </div>
-      <label class="lbl">Village / Area</label>
+      <label class="lbl">Village / Area (Type karein)</label>
       <input class="inp" id="o-village" placeholder="Kothrud">
       <div class="btn-row">
         <button class="btn btn-primary" onclick="ownerNext(1)">Continue →</button>
@@ -450,17 +459,29 @@ select.inp option{background:#0b0b14;color:#ececf2}
       </div>
     </div>
 
-    <!-- STEP 4 -->
+    <!-- STEP 4: PIN & PASSWORD -->
     <div class="form-step" id="step4">
       <h3 style="font-size:17px;margin-bottom:4px">Secure Your Account</h3>
-      <p style="color:var(--muted);font-size:12.5px;margin-bottom:16px">Set a password to manage your listing later.</p>
-      <label class="lbl">Password *</label>
+      <p style="color:var(--muted);font-size:12.5px;margin-bottom:16px">Set a 6-digit Secret PIN and a password to manage your listing.</p>
+      
+      <!-- 🔥 NEW: 6-Digit PIN Box -->
+      <label class="lbl" style="color:var(--gold); font-size:14px;">Your 6-Digit Secret PIN *</label>
+      <input class="inp" type="text" id="o-pin" placeholder="000000" maxlength="6" inputmode="numeric" 
+             style="font-size:24px; letter-spacing:10px; text-align:center; font-weight:800; border-color:var(--gold); color:var(--gold); padding:16px;">
+      <p style="font-size:11.5px;color:var(--muted);margin-top:6px">Yeh aapka login ID hoga. Ise yaad rakhein!</p>
+
+      <label class="lbl" style="margin-top:20px;">Password *</label>
       <input class="inp" type="password" id="o-pass" placeholder="Minimum 6 characters">
       <label class="lbl">Confirm Password *</label>
       <input class="inp" type="password" id="o-pass2" placeholder="Re-enter password">
+
+      <!-- 🔥 NEW: Highlighted Warning Box -->
       <div class="warn-box">
-        ⚠️ <b>Important:</b> Your 6-digit ID and password will be shown after submission. <b>Remember them carefully.</b> There is no password recovery option — if you forget, you'll lose access to your listing.
+        ⚠️ <b>IMPORTANT WARNING!</b> <br>
+        Aapka 6-Digit PIN hi aapka Login ID hai. <b>Ise aur apna Password zaroor yaad rakhein.</b><br>
+        Agar aap bhool gaye toh website me <b>koi "Forgot Password" ka option nahi hai</b>. Aapko apni listing dobara banani padegi.
       </div>
+
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="ownerBack(4)">← Back</button>
         <button class="btn btn-primary" id="create-btn" onclick="createOwner()">Create My Listing ✓</button>
@@ -492,9 +513,9 @@ select.inp option{background:#0b0b14;color:#ececf2}
   <div class="back-btn" onclick="showView('home')">← Back to Home</div>
   <div class="panel panel-narrow" style="max-width:460px">
     <h2 style="font-size:24px;font-weight:800;margin-bottom:6px">Owner Login</h2>
-    <p style="color:var(--muted);font-size:13.5px;margin-bottom:20px">Login with your 6-digit ID to manage your listing.</p>
-    <label class="lbl">Owner ID</label>
-    <input class="inp" id="login-id" placeholder="6-digit ID" maxlength="6" inputmode="numeric">
+    <p style="color:var(--muted);font-size:13.5px;margin-bottom:20px">Login with your 6-digit PIN to manage your listing.</p>
+    <label class="lbl">Secret PIN</label>
+    <input class="inp" id="login-id" placeholder="6-digit PIN" maxlength="6" inputmode="numeric" style="font-size:20px; letter-spacing:5px; text-align:center;">
     <label class="lbl">Password</label>
     <input class="inp" id="login-pass" type="password" placeholder="Your password">
     <div class="btn-row">
@@ -623,9 +644,9 @@ select.inp option{background:#0b0b14;color:#ececf2}
 /* ================================================================
    CONFIG
 ================================================================ */
-const CLOUD_NAME   = "pcvmxlg2";        // 🔴 Cloudinary
-const UPLOAD_PRESET = "roomrent_unsigned";    // 🔴 Unsigned preset
-const ADMIN_PASS   = "admin@123";                   // 🔴 Admin password
+const CLOUD_NAME   = "pcvmxlg2";        
+const UPLOAD_PRESET = "roomrent_unsigned";    
+const ADMIN_PASS   = "admin@123";                   
 const FIREBASE_URL = "https://surajautopost-default-rtdb.firebaseio.com/";
 
 /* ================================================================
@@ -854,7 +875,7 @@ function startOwnerFlow() {
 }
 
 function resetOwnerForm() {
-  ['o-name','o-mobile','o-state','o-district','o-village','o-pass','o-pass2'].forEach(id => {
+  ['o-name','o-mobile','o-state','o-district','o-village','o-pass','o-pass2','o-pin'].forEach(id => {
     const el = $(id); if (el) el.value = '';
   });
   $('thumb-grid').innerHTML = '';
@@ -878,8 +899,8 @@ function validateStep(n) {
     if (!$('o-name').value.trim()) return 'Enter your name';
     const m = $('o-mobile').value.trim();
     if (!/^[6-9]\d{9}$/.test(m)) return 'Enter valid 10-digit mobile';
-    if (!$('o-state').value.trim() || !$('o-district').value.trim() || !$('o-village').value.trim())
-      return 'Fill state, district and village';
+    if (!$('o-state').value.trim() || !$('o-district').value.trim())
+      return 'Fill state and district (Map se select karein ya type karein)';
   }
   if (n === 2) {
     let total = 0;
@@ -928,7 +949,7 @@ function renderTypeFields() {
 }
 
 /* ================================================================
-   MAP
+   MAP / LOCATION
 ================================================================ */
 function initMap() {
   if (state.map) return;
@@ -959,9 +980,18 @@ async function reverseGeocode(lat, lng) {
     if (a.state && $('o-state')) $('o-state').value = a.state;
     if ((a.state_district || a.county) && $('o-district'))
       $('o-district').value = a.state_district || a.county;
+    // Auto-fill village if possible, else user will type
     if ((a.village || a.town || a.city || a.suburb) && $('o-village'))
       $('o-village').value = a.village || a.town || a.city || a.suburb;
   } catch (e) { /* silent */ }
+}
+
+// 🔥 NEW: Mobile Map App Open
+function openMobileMap() {
+  // Opens Google Maps or Apple Maps depending on device
+  const url = `https://www.google.com/maps/search/?api=1&query=`;
+  window.open(url, '_blank');
+  toast('Map app me apna location search karein aur wapas aakar details bharein', 'success');
 }
 
 /* ================================================================
@@ -1005,6 +1035,9 @@ async function generateUniqueId() {
 
 async function createOwner() {
   const p1 = $('o-pass').value, p2 = $('o-pass2').value;
+  const pin = $('o-pin').value;
+
+  if (pin.length !== 6 || !/^\d+$/.test(pin)) return toast('PIN must be exactly 6 digits', 'error');
   if (p1.length < 6) return toast('Password min 6 characters', 'error');
   if (p1 !== p2) return toast('Passwords do not match', 'error');
   if (!db) return toast('Firebase not connected', 'error');
@@ -1029,15 +1062,21 @@ async function createOwner() {
       return;
     }
 
-    const id = await generateUniqueId();
-    const data = collectOwnerData(id);
+    // Check if PIN is already taken
+    const pinSnap = await db.ref('owners/' + pin).once('value');
+    if (pinSnap.exists()) {
+      btn.disabled = false; btn.textContent = 'Create My Listing ✓';
+      return toast('This PIN is already taken. Choose another one.', 'error');
+    }
+
+    const data = collectOwnerData(pin);
     data.createdAt = Date.now();
     data.bookingsCount = 0;
-    await db.ref('owners/' + id).set(data);
+    await db.ref('owners/' + pin).set(data);
 
-    $('result-id').textContent = id;
+    $('result-id').textContent = pin;
     setStep(5);
-    toast('Listing created! Save your ID.', 'success');
+    toast('Listing created! Save your PIN.', 'success');
   } catch (err) {
     console.error(err);
     toast('Error: ' + err.message, 'error');
@@ -1053,12 +1092,12 @@ async function ownerLogin() {
   if (!db) return toast('Firebase not connected', 'error');
   const id = $('login-id').value.trim();
   const pass = $('login-pass').value;
-  if (!/^\d{6}$/.test(id)) return toast('Enter valid 6-digit ID', 'error');
+  if (!/^\d{6}$/.test(id)) return toast('Enter valid 6-digit PIN', 'error');
   if (!pass) return toast('Enter password', 'error');
 
   try {
     const snap = await db.ref('owners/' + id).once('value');
-    if (!snap.exists()) return toast('No listing with this ID', 'error');
+    if (!snap.exists()) return toast('No listing with this PIN', 'error');
     const data = snap.val();
     if (data.password !== pass) return toast('Incorrect password', 'error');
 
@@ -1087,7 +1126,7 @@ async function loadOwnerDashboard(id) {
   state.currentOwner = d;
 
   $('dash-greet').textContent = 'Welcome, ' + d.name + '!';
-  $('dash-sub').textContent = `Owner ID: ${d.ownerId} · ${d.village}, ${d.district}`;
+  $('dash-sub').textContent = `Your Secret PIN: ${d.ownerId} · ${d.village}, ${d.district}`;
 
   let rooms = 0, flats = 0;
   ['boys','girls','family'].forEach(t => {
@@ -1149,6 +1188,7 @@ function editListing() {
     $('o-village').value = d.village || '';
     $('o-pass').value = d.password || '';
     $('o-pass2').value = d.password || '';
+    $('o-pin').value = d.ownerId || ''; // Load PIN
     renderTypeFields();
     ['boys','girls','family'].forEach(t => {
       ['rooms','flats'].forEach(k => {
@@ -1481,31 +1521,24 @@ document.addEventListener('mousemove', e => {
 });
 
 /* ================================================================
-   SAFE INIT — NO GSAP CRASH
+   SAFE INIT
 ================================================================ */
 (function init() {
-  // 🔥 CRITICAL: Cards ko 100% visible banao. Koi GSAP nahi.
   document.querySelectorAll('.option-card, .hero h1, .hero p, .eyebrow').forEach(el => {
     el.style.opacity = '1';
     el.style.visibility = 'visible';
     el.style.transform = 'none';
   });
 
-  // Safe GSAP (optional, only if loaded and only for non-critical elements)
   if (window.gsap) {
     try {
-      // Sirf subtle fade-in for eyebrow
       gsap.from('.eyebrow', { y: 15, opacity: 0, duration: 0.6, ease: 'power2.out', clearProps: 'all' });
-      // Cards ko chhod do — CSS transitions enough hain
     } catch (e) {
       console.warn('GSAP error (safe):', e);
     }
   }
 
-  // Type fields render turant
   try { renderTypeFields(); } catch (e) { console.warn(e); }
-
-  // Console check
   console.log('✅ DeraFind ready. Cards visible. GSAP optional.');
 })();
 </script>
